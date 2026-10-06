@@ -1,0 +1,27 @@
+06-10-2026  |  12:58:28 | Start initialization source data
+06-10-2026  |  12:58:29 | File astronomy_dates.txt not found or empety.
+06-10-2026  |  12:58:29 | Start calculation lunar data...
+06-10-2026  |  12:58:31 | Moon daily records saved/updated: 5844
+06-10-2026  |  12:58:32 | Orbital extremes: 423
+06-10-2026  |  12:58:32 | ISC Seismological data calculation...
+06-10-2026  |  12:58:43 | Saved/updated daily seismological records: 5757
+06-10-2026  |  12:58:43 | USGS - water data calculation...
+06-10-2026  |  12:58:50 | Saved/updated daily water data: 5484
+06-10-2026  |  12:58:50 | Start calculation statistical normals...
+06-10-2026  |  12:58:50 | Baseline [moon_speed]: Mean = 129,722, Sigma = 69,050
+06-10-2026  |  12:58:51 | Baseline [moon_speed_derivative]: Mean = 28,197, Sigma = 17,538
+06-10-2026  |  12:58:51 | Baseline [global_depth]: Mean = 31,955, Sigma = 6,444
+06-10-2026  |  12:58:51 | Baseline [sum_magnitude]: Mean = 1828,810, Sigma = 775,638
+06-10-2026  |  12:58:51 | Baseline [event_count]: Mean = 817,061, Sigma = 386,586
+06-10-2026  |  12:58:51 | Baseline [benioff_strain]: Mean = 59756543,369, Sigma = 102699754,405
+06-10-2026  |  12:58:51 | Baseline [water_temp]: Mean = 14,583, Sigma = 5,180
+06-10-2026  |  12:58:51 | Baseline calculation completed.
+06-10-2026  |  12:58:51 | Starting scoring calibration (Backtesting)...
+06-10-2026  |  12:58:52 | Calibration completed on 109 events.
+06-10-2026  |  12:58:52 | Depth Anomaly weight is now 0,42
+06-10-2026  |  12:58:52 | 🔍 Starting Data Profiling for M >= 6,9...
+06-10-2026  |  12:58:55 | ✅ Profiled 109 catastrophic events.
+06-10-2026  |  12:58:55 | ✅ Catastrophic baselines (Means & Medians) successfully calculated and saved.
+06-10-2026  |  12:58:55 | ⏳ Start model training (3 Days, 2 Days, 24h)...
+06-10-2026  |  12:59:07 | Model training successful.
+06-10-2026  |  12:59:07 | Data initialization complete
