@@ -1,0 +1,60 @@
+<h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">IV. System Triggers & Pointers</h3>         
+<div style="background: var(--bg-panel); border: 1px solid var(--border-color); border-radius: 4px; padding: 15px; margin-top: 15px;">
+<h4 style="color: var(--text-light);">Active Triggers</h4>
+<ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6;">
+	<!-- ASTRONOMY -->
+	<li>Proximity to Earth's Apsides (Aphelion / Perihelion) ≤16d or ≤35d</li>
+	<li>Proximity to Equinoxes (Vernal / Autumnal)  ≤16d</li>
+	<li>Lunar Orbital Speed Extremum (Perigee / Apogee Proximity) ≤3d</li>
+	<li>Lunar Acceleration Extremum (Peak Momentum Derivatives) ≤3d</li>
+	<li>Phase Shift of the Moon's Orbital Swept Area ≤15d</li>			
+	<!-- SEISMIC CORRELATIONS -->
+	<li>Linear & Monotonic Correlation (Pearson & Spearman): Magnitude vs. Depth</li>
+	<li>Global Earthquake Depth Dispersion Anomaly (&sigma; Deviation)</li>
+	<!-- SEISMIC ADVANCED -->
+	<li>b-value Anomaly (Gutenberg-Richter Law Stress Indicator)</li>
+	<li>Accelerated Moment Release (AMR / Benioff's Energy Trend)</li>
+	<li>Seismic Quiescence (Unnatural Benioff Energy Calm)</li>
+	<li>ETAS Seismic Swarm (Event Count &sigma; Anomaly)</li>
+</ul>
+<h4 style="color: var(--text-light);">Pointers</h4>
+<ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6;">
+	<li><b>⬆️ Unidirectional upward movement </b></li>
+	<li><b>⬇️ Unidirectional downward movement</b></li>
+	<li><b><span style="color: var(--accent-yellow);">⇅</span> Change of direction movement</b></li>
+	<li><b>〽️ Tectonic Fluctuations:</b> volatility (vector undefined).</li>
+	<li><b>⚡ Suspicious silence:</b> Total absence of standard markers.</li>
+	<li><b>⚡ SYNERGY: Multi-Seismic Alignment:</b> simultaneous coincidence of specified anomalies.</li>
+	<li><b>⚡ SYNERGY: Astro + Multi-Seismic:</b> Gravitational extremes combined seismic anomalies.</li>
+	<li style="padding-bottom: 10px;"><b>🤖 AI Detection (ML - Weka):</b> The platform utilizes an ensemble of three independent models optimized for different time horizons. The models target M6.0+ events (or swarm ≥ 3, M5.3+ and M5.5 must). 
+	<h4><strong>AI Performance Metrics</strong></h4> 
+	<ul style="padding-left: 20px; list-style-type: circle; margin-top: 5px;"> 
+		<li><b>Today (24h):</b> F0.5: 36.39% | Precision: 32.78% | Recall: 65.12%</li>
+		<li><b>Tomorrow (48h):</b> F0.5: 55.10% | Precision: 52.16% | Recall: 71.18%</li>
+		<li><b>3 Days (72h):</b> F0.5: 82.26% | Precision: 78.77% | Recall: 100.00%</li>
+	</ul>
+	</li>
+	</ul> 
+	<p>The AI ensemble analyzes a 10-parameter vector (including seismic energy, depth shifts, and gravitational triggers), with the following core markers proving most effective in the Explainable AI (XAI) layer:</p>
+	<ul style="padding-left: 20px; font-size: 0.9rem; line-height: 1.6;">
+		<li><b>ETAS Swarm Ratio</b> (Ogata Model / Omori–Utsu Law)</li>
+		<li><b>Gutenberg–Richter b-value</b> (Aki–Utsu Method)</li>
+		<li><b>Pearson Correlation</b> (Magnitude vs. Depth anomaly)</li>
+	</ul>
+<p>It should also be noted that the scientific community currently has no universally accepted or reliable methods for short-term earthquake and volcanic eruption forecasting. 
+For this reason, GMRA-System v1.0 employs a proprietary multi-level approach across different forecasting stages, using AI as an auxiliary filter.
+</p>
+<h4><strong>📊 Final System Accuracy</strong> (Red Zone)</h4> 
+<ul style="padding-left: 20px; list-style-type: circle; margin-top: 5px;"> 
+	<li><b>M5.5+ (24h):</b> F0.5: 63.70% | Precision: 76.52% | Recall: 38.15%</li>
+	<li><b>M6.0+ (24h):</b> F0.5: 52.14% | Precision: 49.39% | Recall: 67.01%</li>
+	<li><b>M6.5+ (24h):</b> F0.5: 14.64% | Precision: 12.26% | Recall: 66.25%</li>
+</ul>
+<em>* Accuracy may change with the introduction of new detection methods and system updates.</em>
+<h4 style="color: var(--text-light);">AI Status Messages:</h4>
+<ul style="padding-left: 10px; font-size: 0.9rem; line-height: 1.6;">
+	<li style="padding-bottom: 20px;"><b>⚠️ VOTING ENSEMBLE:</b> The mathematical scoring system (using manual calibration with fixed weighted multipliers) indicates a >75% probability of an M6.0 - 6.5+ earthquake; the 3ML cascade cross-validation (24h, 48h, 72h horizons) forecasts jointly confirm increasing stress accumulation, or they vote independently.</li>
+	<li><b>🤖 Not confirmed:</b> The scoring system indicates a >75% probability of an M6.0 - M6.5+ earthquake, but the AI cascade (the 3 ML models) does not support the alert (0 or only 1 model triggered). In this scenario, the ML acts as a safeguard, suppressing the mathematical false alarm and automatically downgrading the threat level to the orange or yellow zone.</li>
+</ul>
+<em>Informational messages in the "Active triggers" section, including ML notices, reflect information for "today’s" forecast (i.e., calculated using data recorded through yesterday). ML can generate a forecast for tomorrow if the 24-hour model is not triggered.</em>
+</div>

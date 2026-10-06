@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>GMRA-System Mathematical Core</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Open-source mathematical framework for global seismic risk prediction. Discover how GMRA analyzes Benioff strain, Gutenberg-Richter b-values, and gravitational extremes.">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gmra.live/mathcore">
+    <meta property="og:title" content="GMRA - Mathematical Core & Predictive Engine">
+    <meta property="og:description" content="Open-source mathematical framework for global seismic risk prediction. Discover how GMRA analyzes Benioff strain, Gutenberg-Richter b-values, and gravitational extremes.">
+    <meta property="og:image" content="https://gmra.live/img/screenshot.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GMRA-System Mathematical Core">
+    <meta name="twitter:description" content="Open-source mathematical framework for global seismic risk prediction. Discover how GMRA analyzes Benioff strain, Gutenberg-Richter b-values, and gravitational extremes.">
+    <meta name="twitter:image" content="https://gmra.live/img/screenshot.jpg">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/jsmath.js"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script th:inline="none">
+      window.MathJax = {
+        tex: {
+          inlineMath: [['$', '$']],
+          displayMath: [['$$', '$$']]
+        }
+      };
+    </script>
+</head>
+<body>
+<div class="header-bar">
+    <div class="brand-container">
+        <h1><a href="/">≡ GMRA-System</a></h1>
+        <div style="font-size: larger;">Global Seismic Monitoring and Risk Assessment System</div>
+    </div>
+    <div class="threat-wrapper">
+        <div class="threat-level">GLOBAL TENSION</div>
+        <div class="server-time-container">
+            <span id="server-clock" th:data-server-time="${serverTimeMillis}">--:--:--</span>
+        </div>
+    </div>
+</div>
+<div class="dashboard">
+<!-- LEFT COLUMN -->
+	<div class="left-col">
+	<div class="panel" style="flex: none;">
+		<div th:insert="~{fragments/panelControls}" class="panel-controls"></div>
+		<h2 class="panel-title">Average depth (by Earth)</h2>
+		<div class="chart-container" style="height: 200px; width: 100%;"><canvas id="depthChart"></canvas></div>
+	</div>
+	<div class="panel" style="flex: none;">
+		<div th:insert="~{fragments/panelControls}" class="panel-controls"></div>
+		<h2 class="panel-title">Global magnitude (sum M1+)</h2>
+		<div class="chart-container" style="height: 200px; width: 100%;"><canvas id="magChart"></canvas></div>
+	</div>
+	<div class="panel" style="flex: none;">
+		<div th:insert="~{fragments/panelControls}" class="panel-controls"></div>
+		<h2 class="panel-title">Moon: average speed (km/h)</h2>
+		<div class="chart-container" style="height: 200px; width: 100%;"><canvas id="moonSpeedChart"></canvas></div>
+	</div>
+	<div class="panel" style="flex: none;">
+		<div class="moon-info">
+		<div>Moon distance: <span id="moon-dist">0</span></div>
+		</div>
+	</div>
+	</div>
+	<!-- CENTER COLUMN -->
+	<div class="center-col">
+		<div class="panel" style="flex: none;">
+			<div class="about-section-wrapper" style="margin-top:-20px;">
+			<h1 style="color: var(--text-light);">GMRA Mathematical Core & Predictive Engine</h1>
+			<p>Welcome to the mathematical core of the Global Seismic Monitoring and Risk Assessment System (GMRA v1.0). This page details the open-source mathematical model, descriptions of the active triggers, variables, and formulas used to estimate stress accumulation in tectonic faults. Please note that the algorithms of the program operate exclusively on completed one-day cycles (24-hour). Therefore, the historical seismic window used for "today's" forecast physically ends "yesterday". The resulting calculated data narrows the possible event corridor, paving the way for more accurate forecasting (laying the groundwork for a potential GMRA-System v2.0 with a transition to shorter intervals).</p>
+			<p>The system is based on a dual-tier approach: identifying astronomical gravitational extremes and detecting global seismic anomalies. Instead of relying on static thresholds, GMRA uses dynamic backtesting calibration on events with a magnitude $\ge 6.9$ (a customizable parameter) to assign precise weights to various precursors based on historical data. Please note that GMRA version 1.0 is an experimental test model. It serves as a data-driven "sandbox" for validating geophysical theories, testing hypotheses, and calibrating predictive weights. To capture sustained energy accumulation trends, the algorithm evaluates data matrices across three distinct time windows: 3, 7, and 14 days (a customizable parameter).</p>
+		<!-- Fundamental Metrics -->
+			<h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">I. Data Parsing & Fundamental Metrics</h3>
+			<p>The foundational data are updated and processed daily via the <strong>ISC Data Calculator</strong> parser <code>IscDataCalculator</code> which calculates cumulative global metrics for seismic events worldwide.</p>
+			<h4>1. Cumulative Benioff Strain</h4>
+			<p>To track the accumulation and release of tectonic energy, we calculate the Benioff Strain for every recorded earthquake. The seismic energy ($E$) is first derived from the magnitude ($M$):</p><div class="gmra-formula">$$E=10^{1.5M+4.8}$$</div>
+			<p>The Benioff Strain is the square root of this energy release:</p><div class="gmra-formula">$$Strain=\sqrt{E}$$</div>
+			<p>In the system, sudden drops in the daily strain delta $\Delta$ (Quiescence) or exponential accelerations (AMR) act as critical precursors. Below is an excerpt of the calculated data from the GMRA-System database table (sorted by the 'max_magnitude' field).</p>
+		<!-- Table insert -->
+			<div th:insert="~{fragments/earthquake_daily_stats}"></div>
+			<p>In the Java-based backend, the mathematical logic for the calculations and table population is implemented as follows:</p>
+			<div th:insert="~{fragments/codeBenioff}"></div>
+			<h4>2. Gutenberg-Richter b-value (Aki-Utsu Method)</h4>
+			<p>The b-value represents the ratio of small to large earthquakes. We calculate this dynamically using the Maximum Likelihood Estimation (Aki-Utsu method) applied only to events at or above our Magnitude of Completeness ($M_c=4.0$).</p><div class="gmra-formula">$$b=\frac{\log_{10}(e)}{\bar{M}-M_c}$$</div>
+			<p>Where $\bar{M}$ is the average magnitude of all events $\ge 4.0$. A dropping b-value (approaching the $0.5 - 1.0$ zone) indicates severe crustal locking, while a sudden rebound velocity ($\ge 0$) triggers a critical alarm.</p>
+			<div th:insert="~{fragments/codeBvalue}"></div>
+			<div th:insert="~{fragments/tableBaselines}"></div>
+		<!-- Seismic Anomaly Detection -->
+			<h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">II. Seismic Anomaly Detection</h3>
+			<p>The program algorithms serve as an analytical engine, processing the acquired data through various mathematical methods.</p>
+			<h4>1. Tectonic Lock-In (Pearson & Spearman Correlation)</h4>
+			<p>We measure the statistical coupling (interaction) between global seismic magnitudes and depths. A high correlation combined with a sharp change in the delta is used as an indicator of tectonic changes in the Earth's crust.</p><div class="gmra-formula">$$r=\frac{\sum(x_i-\bar{x})(y_i-\bar{y})}{\sqrt{\sum(x_i-\bar{x})^2\sum(y_i-\bar{y})^2}}$$</div>
+			<div class="math-info">
+<pre style="margin: 0;"><code>// PredictionCalculator.java: Pearson Gradient Tracking
+double pearsonToday = Math.abs(mathService.getPearsonCorrelation(windowMagnitudes, windowDepths));
+double pearsonDelta = pearsonToday - pearsonYesterday;
+
+if (pearsonToday &gt;= 0.85 &amp;&amp; Math.abs(pearsonDelta) &gt;= 0.1) {
+    currentScore += mathService.cachedWeights.weightPearsonMD;
+    result.activeTriggers.add("Pearson: Mag vs Depth ≥ 0.85⬆️");
+}</code></pre>
+			</div>
+			<h4>2. Depth Sigma Anomaly (Upward Migration)</h4>
+			<p>Analyzing the vertical migration of global seismic stress and tracking the 1-day velocity vector where the depth delta $\Delta$ is strictly negative, the program identifies an upward-directed pressure (energy) buildup toward the Earth's crust ($\text{depthDelta} < 0$). The intensity of this upward movement is measured relative to the historical global standard deviation of depth $\sigma$.</p>
+			<div class="math-info">
+<pre style="margin: 0;"><code>// PredictionCalculator.java: Depth Vector Analysis
+double depthDelta = depthToday - depthYesterday; 
+            
+if (depthDelta &lt; 0) { // ONLY if the pressure upwards
+    double normalDepthSigma = mathService.baselineSigma.get("global_depth");            
+    double depthAccelerationRatio = Math.abs(depthDelta) / normalDepthSigma;
+
+    if (depthAccelerationRatio &gt; 0.5) { 
+        currentScore += mathService.cachedWeights.weightDepthAnomaly;
+        result.activeTriggers.add("Depth Anomaly: Violent Shift⬆️");
+    }
+}</code></pre>
+			</div>
+			<h4>3. Seismic Event Acceleration (ETAS)</h4>
+			<p>To differentiate between random daily noise and true epidemic-type aftershock sequences (ETAS) or foreshock swarms, we use a two-level mathematical approach combining Macro-Trends (6-day linear regression slope) and Micro-Deltas (1-day acceleration ratio).</p>
+			<div class="gmra-formula">$$m=\frac{n(\sum xy)-(\sum x)(\sum y)}{n(\sum x^2)-(\sum x)^2}$$</div>
+<div class="math-info">
+<pre style="margin: 0;"><code>// PredictionCalculator.java: Two-level ETAS Regression
+double currentEventSpeed = currentCount - windowEventCounts[windowEventCounts.length - 2];
+double overallTrend = mathService.calculateTrendSlope(macroEventCounts); // subwindow linear regression
+
+if (currentEventSpeed &gt; 0) {
+    // Sustained Swarm Acceleration
+    boolean isSustainedSwarm = overallTrend &gt; 0;
+    // ... score processing
+} else if (currentEventSpeed &lt;= 0) {
+    // Seismic silence (A sharp break in Up-trend or abnormally strong decline)
+    double dropRatio = Math.abs(currentEventSpeed) / normalEventCountSigma;
+    if (overallTrend &gt; 0 || dropRatio &gt; 0.07) {
+        currentScore += mathService.cachedWeights.weightEventSwarm;
+        result.activeTriggers.add("ETAS Swarm: U-turn / Lock-in");
+    }
+}
+
+// MathCalculationService.java: Macro-Trend Linear Regression
+public double calculateTrendSlope(double[] data) {
+    if (data == null || data.length &lt; 2) return 0.0;
+    double sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    int n = data.length;
+    
+    for (int i = 0; i &lt; n; i++) {
+        sumX += i;
+        sumY += data[i];
+        sumXY += (i * data[i]);
+        sumX2 += (i * i);
+    }
+    return (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+}</code></pre>
+            </div>
+			<h3 style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">III. The Synergy Engine & Red Zone Override</h3>
+			<p>The final layer where all triggers are synthesized. The probability of an earthquake or volcanic eruption is not just the sum of its parts; it is driven by non-linear synergy. Please note that the program cannot yet distinguish between volcanoes and earthquakes. If the algorithm detects a highly specific alignment—a critical Pearson lock-in, a violent upward depth strike, and a b-value anomaly — it initiates a <strong>red zone override</strong>, setting the risk probability to 85.0% or adding a percentage, forcing the risk probability.</p>
+			<div class="math-info">
+<pre style="margin: 0;"><code>// PredictionCalculator.java: Red Zone Override
+boolean hasCriticalPearson = false;
+boolean hasCriticalDepth = false;
+boolean hasCriticalBValue = false;
+
+for (String t : result.activeTriggers) {
+    if (t.contains("Pearson: Mag vs Depth ≥ 0.85⬆️")) hasCriticalPearson = true;
+    if (t.contains("Depth Anomaly: Violent Shift⬆️")) hasCriticalDepth = true;
+    if (t.contains("b-value Anomaly (0.5 - 1.0)")) hasCriticalBValue = true;
+}
+
+// RED ZONE OVERRIDE
+if (hasCriticalPearson &amp;&amp; hasCriticalDepth &amp;&amp; hasCriticalBValue &amp;&amp; currentScore &lt;= 75.0) {
+    result.activeTriggers.add("⚡ SYNERGY: Multi-Seismic Alignment ("+currentScore+"% ⇄ 85%)"); 
+    currentScore = 85.0; 
+}</code></pre>
+			</div>
+		</div>
+<div style="margin-top:-30px;" th:insert="~{fragments/glossary}"></div>
+<div th:insert="~{fragments/tableWeight}"></div>
+	</div>
+</div>
+<!-- RIGHT COLUMN -->
+<div class="right-col">
+	<div class="panel">
+		<h2 class="panel-title">Volcanoes & earthquakes ≥ М6</h2>
+			<div class="forecast-row">
+				<div class="forecast-label"><span>Today</span><span id="val-today">0%</span></div>
+				<div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-today"></div></div>
+			</div>
+			<div class="forecast-row">
+				<div class="forecast-label"><span>Tomorrow</span><span id="val-tomorrow">0%</span></div>
+				<div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-tomorrow"></div></div>
+			</div>
+			<div class="forecast-row">
+				<div class="forecast-label"><span>7 days</span><span id="val-7days">0%</span></div>
+				<div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-7days"></div></div>
+			</div>
+			<div class="forecast-date-selector">
+				<label for="forecast-date" class="forecast-date">Check forecast for date:</label>
+				<div style="display: flex; gap: 10px;">
+					<input type="date" id="forecast-date" min="2011-01-01">
+					<button id="btn-check-forecast">Check</button>
+				</div>
+			</div>
+		</div>
+		<div class="panel" style="flex: 1;">
+			<h2 class="panel-title">Active triggers</h2>
+			<ul id="triggers-list">
+				<li>Waiting for data...</li>
+			</ul>
+		</div>
+	</div>
+</div>
+<footer class="author-project" style="position: relative; margin-top: 0px;">
+    <p>
+        Idea and Development: <strong>Morgunovskiy V.V.</strong><br>
+        Developed with the assistance of Gemini AI<br>
+        Email: <span id="contact-email"></span> <br>
+    </p>
+</footer>
+<script>
+    var u = 'freevmv'; 
+    var d = 'gmail.com';
+    document.getElementById('contact-email').innerHTML = '<a href="mailto:' + u + '@' + d + '">' + u + '@' + d + '</a>';
+</script>
+</body>
+</html>

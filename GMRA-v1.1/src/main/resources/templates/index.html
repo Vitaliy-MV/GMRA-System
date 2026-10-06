@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Global Monitoring Service (GMRA)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Global Seismic Monitoring and Risk Assessment System">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://gmra.live/">
+    <meta property="og:title" content="GMRA - Global Seismic Monitoring">
+    <meta property="og:description" content="Predictive seismic and volcanic monitoring system based on orbital mechanics.">
+    <meta property="og:image" content="https://gmra.live/img/screenshot.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="GMRA - Global Seismic Monitoring">
+    <meta name="twitter:description" content="Predictive seismic and volcanic monitoring system based on orbital mechanics.">
+    <meta name="twitter:image" content="https://gmra.live/img/screenshot.jpg">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/js/app.js"></script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAuUpsdjxAoZNfBxdcQ7Ux-8Of6glgsUXA&callback=initMap&loading=async"></script>
+</head>
+<body>
+<div class="header-bar">
+    <div class="brand-container">
+        <h1><a href="/">≡ GMRA-System</a></h1>
+        <div style="font-size: larger;">Global Seismic Monitoring and Risk Assessment System</div>
+    </div>
+    <div class="threat-wrapper">
+        <div class="threat-level">GLOBAL TENSION</div>
+        <div class="server-time-container">
+            <span id="server-clock" th:data-server-time="${serverTimeMillis}">--:--:--</span>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard">
+	<div class="left-col">
+	<div class="panel">
+		<div th:insert="~{fragments/panelControls}" class="panel-controls"></div>
+		<h2 class="panel-title">Average depth (by Earth)</h2>
+		<div class="chart-container" style="max-height: 149px; width: 100%;"><canvas id="depthChart"></canvas></div>
+	</div>
+	<div class="panel">
+		<div th:insert="~{fragments/panelControls}" class="panel-controls"></div>
+		<h2 class="panel-title">Global magnitude (sum M1+)</h2>
+		<div class="chart-container"><canvas id="magChart"></canvas></div>
+	</div>
+	<div class="panel">
+		<div th:insert="~{fragments/panelControls}" class="panel-controls"></div>
+		<h2 class="panel-title">Moon: average speed (km/h)</h2>
+		<div class="chart-container"><canvas id="moonSpeedChart"></canvas></div>
+	</div>
+	<div class="panel" style="flex: none;">
+		<div class="moon-info">
+			<div>Moon distance: <span id="moon-dist">0</span></div>
+		</div>
+	</div>
+	</div>
+	<div class="center-col">
+	<div id="map-container" style="position: relative; flex: 1; display: flex; flex-direction: column;">
+		<div id="map" style="flex: 1; width: 100%;"></div>
+			<div class="water-temp-overlay">
+			<div class="water-temp-header">
+			<div class="water-temp-title">
+				<strong>USGS Water Temperature</strong><br>
+				<span style="font-size: 0.75rem; color: #6c7a9c;">Firehole River (st: 06036905)</span>
+			</div>
+			<div class="water-temp-current">
+				t <span id="current-water-temp">--.--</span>°C
+			</div>
+			</div>
+			<div class="water-chart-container">
+				<canvas id="waterTempChart"></canvas>
+			</div>
+		</div>
+	</div>
+	<div class="panel" style="flex: none;">
+		<h2 class="panel-title">Global levels</h2>
+		<div class="gmra-info">
+			<p><!-- LOW  🟢--> MODERATE 🟡 ELEVATED 🟠 EXTREME 🔴</p>
+			<p style="text-align: center;"><a id="about-link" href="#about-content">About GMRA-System</a></p>
+		</div>
+	</div>
+	</div>
+	<div class="right-col">
+		<div class="panel">
+                <h2 class="panel-title">Volcanoes & earthquakes ≥ М6</h2>
+                <div class="forecast-row">
+                    <div class="forecast-label"><span>Today</span><span id="val-today">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-today"></div></div>
+                </div>
+                <div class="forecast-row">
+                    <div class="forecast-label"><span>Tomorrow</span><span id="val-tomorrow">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-tomorrow"></div></div>
+                </div>
+                <div class="forecast-row">
+                    <div class="forecast-label"><span>7 days</span><span id="val-7days">0%</span></div>
+                    <div class="progress-bar-bg"><div class="progress-bar-fill" id="bar-7days"></div></div>
+                </div>
+                <div class="forecast-date-selector">
+    				<label for="forecast-date" class="forecast-date">Check forecast for date:</label>
+    			<div style="display: flex; gap: 10px;">
+        			<input type="date" id="forecast-date" min="2011-01-01">
+        		<button id="btn-check-forecast">Check</button>
+    			</div>
+				</div>
+            </div>
+            <div class="panel" style="flex: 1;">
+                <h2 class="panel-title">Active triggers</h2>
+                <ul id="triggers-list">
+                    <li>Waiting for data...</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+<div class="about-section-wrapper">
+    <div class="spoiler-toggle" id="spoiler-toggle">
+        <hr class="spoiler-hr">
+        <div class="spoiler-icon">▼</div>
+    </div>
+    <div class="spoiler-content" id="about-content">
+    <h2>About GMRA-System v1.0</h2>
+    <div th:insert="~{fragments/AboutSystem}"></div>
+    <div class="section-wrapper">
+        <div class="wrap-content">
+            <h3>Global Tension Levels</h3>
+            <ul style="list-style: none; padding: 0; line-height: 1.8;">
+                <!-- <li>🟢 <strong>LOW (0% - 25%)</strong>: Normal background</li> -->
+                <li>🟡 <strong>MODERATE (0% - 55%)</strong>: Moderate tension</li> 
+                <li>🟠 <strong>ELEVATED (55% - 75%)</strong>: High probability</li>
+                <li>🔴 <strong>EXTREME (75% - 100%)</strong>: Critical alignment</li>
+            </ul>
+            <h3>System Triggers & Precursors</h3>
+            <ul style="list-style: none; padding: 0; line-height: 1.8;">
+				<!-- ASTRONOMY -->
+    			<li><b>&#8226;</b> Proximity to Earth's Apsides (Aphelion / Perihelion)</li>
+				<li><b>&#8226;</b> Proximity to Equinoxes (Vernal / Autumnal)</li>
+				<li><b>&#8226;</b> Lunar Orbital Speed Extremum (Perigee / Apogee Proximity)</li>
+				<li><b>&#8226;</b> Lunar Acceleration Extremum (Peak Momentum Derivatives)</li>
+				<li><b>&#8226;</b> Phase Shift of the Moon's Orbital Swept Area</li>
+    			
+    			<!-- SEISMIC CORRELATIONS -->
+				<li><b>&#8226;</b> Linear & Monotonic Correlation (Pearson & Spearman): Magnitude vs. Depth</li>
+				<li><b>&#8226;</b> Global Earthquake Depth Dispersion Anomaly (&sigma; Deviation)</li>
+				
+				<!-- SEISMIC ADVANCED -->
+				<li><b>&#8226;</b> b-value Anomaly (Gutenberg-Richter Law Stress Indicator)</li>
+				<li><b>&#8226;</b> Accelerated Moment Release (AMR / Benioff's Energy Trend)</li>
+				<li><b>&#8226;</b> Seismic Quiescence (Unnatural Benioff Energy Calm)</li>
+				<li><b>&#8226;</b> ETAS Seismic Swarm (Event Count &sigma; Anomaly)</li>
+				<li><b>&#8226;</b> Temporal Seismic Gradient (3-Day Trend)</li>
+			</ul>
+        </div>
+        
+        <div class="wrap-content">
+             	<h3>References</h3>
+            	<p><a href="https://svs.gsfc.nasa.gov/5415/" target="_blank">Moon Phase and Libration (NASA)</a></p>
+            	<p><a href="https://www.isc.ac.uk/about/" target="_blank">International Seismological Centre</a></p>
+            	<p><a href="https://www.emsc.eu/" target="_blank">Euro-Mediterranean Centre (EMSC)</a></p>
+            	<p><a href="https://earthquake.usgs.gov" target="_blank">U.S. Geological Survey</a></p>
+            	<div class="wrap-content">
+            		<h3>Data Access & API</h3>
+            		<p style="font-size: 0.9rem; margin-bottom: 10px;">The forecasting API strictly isolates historical data from target prediction dates to prevent data leakage. When querying a specific date, the algorithm evaluates the tectonic stress accumulated exclusively over the preceding 3, 7, 14-day window (excluding the target date itself) and correlates it with future orbital triggers.</p>
+            		<code class="api-url">GET /api/analytics/forecast?date=YYYY-MM-DD</code>
+        		</div>
+        		<div class="wrap-content">
+            <h3>Open Data Archives</h3>
+            <p>Files used in the project for predictive analytics (machine learning) on the start.</p> 
+            <table class="table-style">
+                <tr style="border-bottom: 1px solid #2f364a;">
+                    <th style="padding: 5px 0;">Source</th>
+                    <th>Format</th>
+                    <th>Link</th>
+                    <th>Size</th>
+                </tr>
+                <tr style="border-bottom: 1px solid #2f364a;">
+                    <td style="padding: 5px 0;">ISC / FDSNWS</td>
+                    <td>CSV/TXT</td>
+                    <td><a href="https://drive.google.com/drive/folders/15jRZqQOCyhKq7VvCduJXjXHb3vEJgLqT?usp=drive_link" target="_blank">Google Drive</a></td>
+                    <td>571Mb</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #2f364a;">
+                    <td style="padding: 5px 0;">NASA Lunar Data</td>
+                    <td>JSON/TXT</td>
+                    <td><a href="https://drive.google.com/drive/folders/1xcVa4LEgvWDoEKErVqS8L3zEW9UfXClF?usp=drive_link" target="_blank">Google Drive</a></td>
+                    <td>16,5Mb</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0;">GMRA-System</td>
+                    <td>WEB</td>
+                    <td><a href="/mathcore">Mathematical Core</a></td>
+                    <td></td>
+                </tr>
+            </table>
+        </div>
+		</div>
+    </div>
+<footer class="author-project">
+    <p style="font-size: small;">
+        Idea and Development: <strong>Morgunovskiy V.V.</strong><br>
+        Developed with the assistance of Gemini AI<br>
+        Email: <span id="contact-email"></span> <br>
+    </p>
+</footer>
+<script>
+    var u = 'freevmv'; 
+    var d = 'gmail.com';
+    document.getElementById('contact-email').innerHTML = '<a href="mailto:' + u + '@' + d + '">' + u + '@' + d + '</a>';
+</script>
+</div>
+</div>
+  
+</body>
+</html>

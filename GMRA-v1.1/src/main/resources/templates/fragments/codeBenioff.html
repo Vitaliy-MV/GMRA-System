@@ -1,0 +1,28 @@
+<div class="math-info">
+<pre style="margin: 0;"><code>// IscDataCalculator.java: Benioff Strain & Aggregation
+private static final double MC_THRESHOLD = 4.0; // Magnitude of Completeness
+
+// ... Inside the parsing loop ...
+if (magnitude &gt; 0) {
+    // E = 10^(1.5 * M + 4.8)
+    double energy = Math.pow(10, 1.5 * magnitude + 4.8);
+    double strain = Math.sqrt(energy);
+    // Add to daily sum
+    benioffByDate.put(date, benioffByDate.get(date) + strain); 
+}
+
+// Aggregating global data for the day
+countByDate.put(date, countByDate.get(date) + 1);
+sumDepth.put(date, sumDepth.get(date) + depth);
+sumMagnitude.put(date, sumMagnitude.get(date) + magnitude);
+
+if (magnitude &gt; maxMagnitude.get(date)) {
+    maxMagnitude.put(date, magnitude);
+}
+
+// Aggregate data ONLY for significant earthquakes (for b-value)
+if (magnitude &gt;= MC_THRESHOLD) {
+    sumMagnitudeAboveMc.put(date, sumMagnitudeAboveMc.get(date) + magnitude);
+    countAboveMc.put(date, countAboveMc.get(date) + 1);
+}</code></pre>
+</div>

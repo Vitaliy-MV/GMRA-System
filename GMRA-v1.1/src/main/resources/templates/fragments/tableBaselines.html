@@ -1,0 +1,55 @@
+<br>
+<h4
+	style="border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">3.
+	Dynamic Calibration & Statistical Baselines</h4>
+<p>
+	Every 24 hours, the system parses new global data, performs
+	a full backtesting recalibration of the scoring weights, and
+	dynamically updates the	<strong>Statistical baselines</strong>.
+	These baselines establish the mathematical norm (mean and
+	standard deviation, $\sigma$) for all metrics.</p>
+<div
+	style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 4px; margin: 20px 0;">
+	<table class="table-style">
+		<thead
+			style="background-color: var(--bg-panel); border-bottom: 1px solid var(--border-color);">
+			<tr>
+				<th style="padding: 10px;">name</th>
+				<th style="padding: 10px;">mean</th>
+				<th style="padding: 10px;">sigma</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr style="border-bottom: 1px solid rgba(47, 54, 74, 0.5);">
+				<td style="padding: 8px 10px;">Benioff Strain</td>
+				<td style="padding: 8px 10px;">59825353.883</td>
+				<td style="padding: 8px 10px;">102885372.380</td>
+			</tr>
+			<tr style="border-bottom: 1px solid rgba(47, 54, 74, 0.5);">
+				<td style="padding: 8px 10px;">Event count</td>
+				<td style="padding: 8px 10px;">819.628</td>
+				<td style="padding: 8px 10px;">385.098</td>
+			</tr>
+			<tr style="border-bottom: 1px solid rgba(47, 54, 74, 0.5);">
+				<td style="padding: 8px 10px;">Global depth</td>
+				<td style="padding: 8px 10px;">31.904</td>
+				<td style="padding: 8px 10px;">6.394</td>
+			</tr>
+			<tr style="border-bottom: 1px solid rgba(47, 54, 74, 0.5);">
+				<td style="padding: 8px 10px;">Sum magnitude</td>
+				<td style="padding: 8px 10px;">1833.972</td>
+				<td style="padding: 8px 10px;">772.641</td>
+			</tr>
+			<tr style="border-bottom: 1px solid rgba(47, 54, 74, 0.5);">
+				<td style="padding: 8px 10px;">Moon speed</td>
+				<td style="padding: 8px 10px;">129.722</td>
+				<td style="padding: 8px 10px;">69.050</td>
+			</tr>
+			<tr style="border-bottom: 1px solid rgba(47, 54, 74, 0.5);">
+				<td style="padding: 8px 10px;">Speed derivative</td>
+				<td style="padding: 8px 10px;">28.197</td>
+				<td style="padding: 8px 10px;">17.538</td>
+			</tr>
+		</tbody>
+	</table>
+</div>

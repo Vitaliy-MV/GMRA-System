@@ -1,0 +1,19 @@
+<div class="math-info">
+<pre style="margin: 0;"><code>// IscDataCalculator.java: Calculating b-value by Aki-Utsu method
+int countMc = countAboveMc.getOrDefault(date, 0);
+double sumMc = sumMagnitudeAboveMc.getOrDefault(date, 0.0);
+ 
+if (countMc &gt;= 3) { // Minimum 3 events &ge; 4.0
+    double avgMagnitudeMc = sumMc / countMc;
+    if (avgMagnitudeMc &gt; MC_THRESHOLD) {
+        double b = Math.log10(Math.E) / (avgMagnitudeMc - MC_THRESHOLD);
+        bValueByDate.put(date, b);
+    }
+    else { 
+        bValueByDate.put(date, 1.0); // Default norm
+    }
+} 
+else { 
+    bValueByDate.put(date, 1.0); // Background normal if countMc &lt; 3
+}</code></pre>
+</div>
