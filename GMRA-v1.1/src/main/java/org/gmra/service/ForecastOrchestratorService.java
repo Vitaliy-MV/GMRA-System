@@ -32,11 +32,10 @@ public class ForecastOrchestratorService {
     public Map<String, PredictionResult> generateFullForecast(LocalDate baseDate, List<Map<String, Object>> allDataFromTest) {
         Map<String, PredictionResult> forecasts = new HashMap<>();
         try {
-        	
         	List<Map<String, Object>> allData = allDataFromTest==null ? systemDao.getAllHistoricalDataJoined() : allDataFromTest;
             PredictionResult today = forecastVector.calculateTrend(allData, baseDate, baseDate, 3);
-            PredictionResult tomorrow = prediction.calculateProbability(allData, baseDate, baseDate.plusDays(1), 7);
-            PredictionResult days7 = prediction.calculateProbability(allData, baseDate, baseDate.plusDays(7), 14);
+            PredictionResult tomorrow = prediction.calculateProbability(allData, baseDate, baseDate.plusDays(1), 7, false);
+            PredictionResult days7 = prediction.calculateProbability(allData, baseDate, baseDate.plusDays(7), 14, false);
 
             int baseIndex = -1;
             for (int i = 0; i < allData.size(); i++) {
@@ -138,10 +137,19 @@ public class ForecastOrchestratorService {
                             today.activeTriggers.add("⚠️ 2ML CASCADE (+" + ((int)diff + 5.0) + "%)");
                             triggersAdd = true;
                         } 
-                        else if (currPerToday >= 75.0) {
+                        else if (currPerToday >= 75.0 && ml72h.probability >= 96.0 && ml48h.probability >= 96.0) {
                             today.probabilityPercent = Math.min(99.0, Math.round((currPerToday + 3.0) * 100.0) / 100.0);
                             today.activeTriggers.addAll(ml48h.triggers);
                             today.activeTriggers.add("🚨 2ML Confirmed! (+3%)");
+                            triggersAdd = true;
+                        }
+                        else if (currPerToday >= 75.0 && ml72h.probability < 96.0 || ml48h.probability < 96.0) {
+                        	percent = currPerToday;
+                            double diff = percent - 75;
+                            percent = currPerToday - diff - 0.1;
+                            percent = Math.round(percent * 100.0) / 100.0;
+                            today.probabilityPercent = percent;
+                            today.activeTriggers.add("⚠️ 2ML CASCADE (-" + ((int)diff + 0.1) + "%)");
                             triggersAdd = true;
                         }
                     }
@@ -182,26 +190,20 @@ public class ForecastOrchestratorService {
                 // ====================================
                 // 🛡️ SECOND LEVEL OF VERIFICATION (FP)
                 // ====================================
-                if (today.probabilityPercent >= 75.0 && currPerToday < 75.0) {
+                if (today.probabilityPercent >= 75.0) {
                     boolean revertToOrange = false;
 
-                    // Rule 1: Extreme Pull (Math < 65%)
+                    // Rule 1: Pulling out weak indicators (< 65%)
                     if (currPerToday < 65.0) {
-                        // We require that BOTH models yield > 96% confidence.
-                        if (ml72h.probability < 96.0 || ml48h.probability < 96.0) {
-                            revertToOrange = true;
-                        }
+                        if (ml72h.probability < 96.0 || ml48h.probability < 96.0) revertToOrange = true;
                     }
-                    // Rule 2: Strong pull (65% to 70%)
-                    else if (currPerToday >= 65.0 && currPerToday < 70.0) {
+                    // Rule 3: Pulling the average (65% - 75%)
+                    else if (currPerToday >= 65.0 && currPerToday < 75.0) {
+                        if (ml72h.probability < 93.0 || ml48h.probability < 93.0) revertToOrange = true;
+                    }
+                    // Rule 3: Extreme Confidence Test (FP Killer)
+                    else if (currPerToday >= 75.0) {
                         if (ml72h.probability < 93.0 || ml48h.probability < 93.0) {
-                            revertToOrange = true;
-                        }
-                    }
-                    // Rule 3: Medium Pull (70% to 75%)
-                    else if (currPerToday >= 70.0 && currPerToday < 75.0) {
-                        if (!(ml72h.probability >= 96.0 || ml48h.probability >= 96.0) && 
-                            (ml72h.probability < 93.0 || ml48h.probability < 93.0)) {
                             revertToOrange = true;
                         }
                     }
