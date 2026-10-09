@@ -39,7 +39,6 @@ public class DataInitializationService {
         this.mathCalculationService = mathCalculationService;
         this.statisticalBaselineService = statisticalBaselineService;
         this.dataProfile = dataProfilerService;
-
     }
     
     // windowSize - is the sampling window 
@@ -47,7 +46,7 @@ public class DataInitializationService {
     public static final int windowSize = 3;
     public static final double TARGET_MAGNITUDE = 6.9;
 
-    @EventListener(ApplicationReadyEvent.class)
+   @EventListener(ApplicationReadyEvent.class)
     public void initializeData() {
     	System.out.println("Start initialization...");
     	tools.writeLog("Start initialization source data");
@@ -62,7 +61,6 @@ public class DataInitializationService {
         statisticalBaselineService.calculateAndSaveBaselines();
         mathCalculationService.loadAstroDatesToCache();
         mathCalculationService.setScoringConfig(windowSize, TARGET_MAGNITUDE);
-        dataProfile.setProfileCatastrophicEvents(windowSize, TARGET_MAGNITUDE);
         try {mlModel.trainAllModels();} 
         catch (Exception e) {	
         	tools.writeLog("Model training error: " + e.getMessage());
@@ -72,6 +70,7 @@ public class DataInitializationService {
         mathCalculationService.setSystemReady(true);
         System.out.println("Initialization complete.");
     }
+	
     private void syncAstronomyDates() {
         String data = tools.readDataFile("astronomy_dates.txt");
         if (data == null || data.isBlank()) {
