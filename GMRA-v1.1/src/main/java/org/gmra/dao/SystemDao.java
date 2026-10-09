@@ -35,7 +35,7 @@ public class SystemDao {
 	    dataSource.setUrl("jdbc:mysql://localhost/gmra_db");
 	    return dataSource;
 	}
-    public void createSystemTables() {
+     public void createSystemTables() {
         jdbcTemplate.execute(
             "CREATE TABLE IF NOT EXISTS moon_stats ("
                 + "stat_date DATE PRIMARY KEY,"
@@ -94,60 +94,7 @@ public class SystemDao {
                 + "aphelion DATE,"
                 + "autumn_eq DATE)"
         );
-        // Table of profiles M >= 6.9
-        jdbcTemplate.execute(
-            "CREATE TABLE IF NOT EXISTS seismic_events_profile ("
-                + "event_date DATE PRIMARY KEY, "
-                + "magnitude DOUBLE, "
-                // -- Pearson
-                + "pearson_day_0 DOUBLE, "
-                + "pearson_day_1 DOUBLE, "
-                + "pearson_day_2 DOUBLE, "
-                + "pearson_day_7 DOUBLE, "
-                // -- Spearman
-                + "spearman_day_0 DOUBLE, "
-                + "spearman_day_1 DOUBLE, "
-                + "spearman_day_2 DOUBLE, "
-                + "spearman_day_7 DOUBLE, "
-                // -- Benioff
-                + "benioff_vel_day_0 DOUBLE, "
-                + "benioff_vel_day_1 DOUBLE, "
-                + "benioff_vel_day_2 DOUBLE, "
-                + "benioff_vel_day_7 DOUBLE, "
-                // -- Depth 
-                + "depth_delta_day_0 DOUBLE, "
-                + "depth_delta_day_1 DOUBLE, "
-                + "depth_delta_day_2 DOUBLE, "
-                + "depth_delta_day_7 DOUBLE, "
-                // -- b-value
-                + "b_value_day_0 DOUBLE, "
-                + "b_value_day_1 DOUBLE, "
-                + "b_value_day_2 DOUBLE, "
-                + "b_value_day_7 DOUBLE, "
-                // -- ETAS
-                + "etas_delta_day_0 DOUBLE, "
-                + "etas_delta_day_1 DOUBLE, "
-                + "etas_delta_day_2 DOUBLE, "
-                + "etas_delta_day_7 DOUBLE)"
-        );
-        
-        jdbcTemplate.execute(
-            "CREATE TABLE IF NOT EXISTS catastrophic_baselines ("
-                + "trigger_name VARCHAR(50) PRIMARY KEY, "
                 
-                + "mean_day_0 DOUBLE, "
-                + "median_day_0 DOUBLE, "
-                
-                + "mean_day_1 DOUBLE, "
-                + "median_day_1 DOUBLE, "
-                
-                + "mean_day_2 DOUBLE, "
-                + "median_day_2 DOUBLE, "
-                
-                + "mean_day_7 DOUBLE, "
-                + "median_day_7 DOUBLE)"
-        );
-        
         jdbcTemplate.execute(
                 "CREATE TABLE IF NOT EXISTS usgs_water_stats ("
                     + "stat_date DATE PRIMARY KEY,"
@@ -317,40 +264,6 @@ public class SystemDao {
                 + "b_value = VALUES(b_value), "
                 + "benioff_strain = VALUES(benioff_strain)";
         jdbcTemplate.update(sql, java.sql.Date.valueOf(statDate), avgDepth, sumMagnitude, maxMagnitude, eventCount, bValue, benioffStrain);
-    }
-
-    public void saveEventProfile(java.sql.Date eventDate, double magnitude, Map<String, Double> m) {
-        jdbcTemplate.update(
-            "INSERT INTO seismic_events_profile (event_date, magnitude, " +
-            "pearson_day_0, pearson_day_1, pearson_day_2, pearson_day_7, " +
-            "spearman_day_0, spearman_day_1, spearman_day_2, spearman_day_7, " +
-            "benioff_vel_day_0, benioff_vel_day_1, benioff_vel_day_2, benioff_vel_day_7, " +
-            "depth_delta_day_0, depth_delta_day_1, depth_delta_day_2, depth_delta_day_7, " +
-            "b_value_day_0, b_value_day_1, b_value_day_2, b_value_day_7, " +
-            "etas_delta_day_0, etas_delta_day_1, etas_delta_day_2, etas_delta_day_7) " +
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            eventDate, magnitude,
-            m.get("pearson_day_0"), m.get("pearson_day_1"), m.get("pearson_day_2"), m.get("pearson_day_7"),
-            m.get("spearman_day_0"), m.get("spearman_day_1"), m.get("spearman_day_2"), m.get("spearman_day_7"),
-            m.get("benioff_vel_day_0"), m.get("benioff_vel_day_1"), m.get("benioff_vel_day_2"), m.get("benioff_vel_day_7"),
-            m.get("depth_delta_day_0"), m.get("depth_delta_day_1"), m.get("depth_delta_day_2"), m.get("depth_delta_day_7"),
-            m.get("b_value_day_0"), m.get("b_value_day_1"), m.get("b_value_day_2"), m.get("b_value_day_7"),
-            m.get("etas_delta_day_0"), m.get("etas_delta_day_1"), m.get("etas_delta_day_2"), m.get("etas_delta_day_7")
-        );
-    }
-    
-    public void saveCatastrophicBaselines(List<Object[]> batchArgs) {
-        String sql = "INSERT INTO catastrophic_baselines (trigger_name, " +
-                     "mean_day_0, median_day_0, mean_day_1, median_day_1, " +
-                     "mean_day_2, median_day_2, mean_day_7, median_day_7) " +
-                     "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";   
-        
-       jdbcTemplate.batchUpdate(sql, batchArgs);
-    }
-    
-    public void cleanTableEventProfile() {
-    	jdbcTemplate.execute("TRUNCATE TABLE seismic_events_profile");
-    	jdbcTemplate.execute("TRUNCATE TABLE catastrophic_baselines");;
     }
     
     public void updateUsgsWaterTemperature(LocalDate statDate, double meanTemp, double medianTemp) {
