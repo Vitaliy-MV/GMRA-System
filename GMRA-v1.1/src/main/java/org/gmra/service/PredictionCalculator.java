@@ -22,7 +22,7 @@ public class PredictionCalculator {
         this.mathService = mathCalculationService;
     }
     
-    public PredictionResult calculateProbability(List<Map<String, Object>> allData, LocalDate baseDate, LocalDate forecastDate, int daysWindow) {
+    public PredictionResult calculateProbability(List<Map<String, Object>> allData, LocalDate baseDate, LocalDate forecastDate, int daysWindow, boolean isToday) {
         if (mathService.cachedWeights == null) { mathService.cachedWeights = systemDao.getScoringWeights(); }
        
         int baseIndex = -1;
@@ -36,7 +36,6 @@ public class PredictionCalculator {
         if (baseIndex == -1 || baseIndex < daysWindow || forecastIndex == -1) {
             return null;
         }
-        
         boolean hasPearson = false;
         boolean hasEtas = false; 
         boolean hasBValue = false;
@@ -63,6 +62,12 @@ public class PredictionCalculator {
         
         double theoreticalMaxScore = mathService.cachedWeights.getTotalMaxScore();
         if (theoreticalMaxScore == 0) return result;
+        double astroFactor = 
+        		mathService.cachedWeights.weightAphelion + 
+        		mathService.cachedWeights.weightEquinox +
+        		mathService.cachedWeights.weightMomentumExt +
+        		mathService.cachedWeights.weightMoonAreaPhase +
+        		mathService.cachedWeights.weightSpeedMoonExt;
         
         // ASTRONOMY
         //====================================================
@@ -220,45 +225,64 @@ public class PredictionCalculator {
                             currentScore += mathService.cachedWeights.weightEventSwarm * 0.53;
                             result.activeTriggers.add("ETAS Swarm: Moderate Accel. (Ogata/Omori-Utsu)");
                         }
-                    } else {
+                    } 
+                    else {
                         // The swarm is fading away amid still high tension
                         currentScore += mathService.cachedWeights.weightEventSwarm;
-                        result.activeTriggers.add("ETAS Swarm: U-turn / Lock-in (Ogata/Omori-Utsu) ⇅");
+                        result.activeTriggers.add("ETAS Swarm: U-turn / Lock-in (Ogata/Omori-Utsu)⇅");
                     }
                 }
             }
-
-        // --- GENERAL FILTER ---
-        //=======================
+        //=================================
+        // -------- GENERAL FILTER --------
+        //=================================
         double probability = (theoreticalMaxScore > 0) ? (currentScore / theoreticalMaxScore) * 100.0 : 0.0;
+        if (isToday == false) { // ============ SYNERGY OVERRIDE ===========>
+             if ((hasApside || hasMoon) && hasBValue && hasEtas && hasDepth || 
+             	(hasApside || hasMoon) && hasBValue && (hasEtas || hasDepth)) { 
+             	if (probability < 75) {probability += 15.0; result.activeTriggers.add("⚡ Astro + Multi-Seismic (+15%)");}
+             	else {result.activeTriggers.add("⚡ Astro + Multi-Seismic");}
+             }
+             else if (hasBValue && hasEtas && hasDepth) {
+             	if (probability < 75) {probability += 5.0; result.activeTriggers.add("⚡ SYNERGY: Multi-Seismic (+5%)");}
+             	else {result.activeTriggers.add("⚡ Multi-Seismic Alignment");}
+             }
+             else if (probability < 20.0) { // suspicious silence
+             	probability = 30.01; result.activeTriggers.add("⚡ Suspicious silence (30%)");
+             }
+        }
+        // ==== SIGMOID ====
+        else if (isToday){
+        	double hazardIndex = 0.0;
+        	if (hasApside) hazardIndex += 1.0;
+        	if (hasMoon) hazardIndex += 1.0;
+        	if (hasPearson) hazardIndex += 1.0;
+        	if (hasBValue) hazardIndex += 1.0;
+        	if (hasDepth) hazardIndex += 1.0;
+        	if (hasEtas) hazardIndex += 1.0;
+        	if (hasBenioff) hazardIndex += 1.0;
+        
+        	// Scaling: every 10% of the base probability gives 1.0 point
+        	double normalizedBase = probability / 10.0;
+        	// Final hazard index (usually ranging from 0 to 15-18)
+        	double finalHazard = normalizedBase + (hazardIndex * (1.0 + (astroFactor * 0.5)));
 
-        // ================
-        // SYNERGY OVERRIDE
-        // ================
-        if ((hasApside || hasMoon) && hasBValue && hasEtas && hasDepth || 
-        	(hasApside || hasMoon) && hasBValue && (hasEtas || hasDepth)) {        	
-        	if (probability < 75) {probability += 15.0; result.activeTriggers.add("⚡ Astro + Multi-Seismic (+15%)");}
-        	else {result.activeTriggers.add("⚡ Astro + Multi-Seismic");}
+        	// LOGISTIC FUNCTION (SIGMOID)
+        	// =================================================
+        	double sensitivity = 0.3; // sensitivity = 0.3 - 1.0
+        	double bias = 5.5; // bias = 7.5 (If finalHazard is 7.5, the probability is 50%)
+        	if (finalHazard > 0) probability = 100.0 / (1.0 + Math.exp(-sensitivity * (finalHazard - bias)));
+        	if (probability < 15.0) {result.activeTriggers.add("⚡ Suspicious silence (30%)"); probability = 30.00;}
         }
-        else if (hasBValue && hasEtas && hasDepth) {
-        	if (probability < 75) {probability += 5.0; result.activeTriggers.add("⚡ SYNERGY: Multi-Seismic (+10%)");}
-        	else {result.activeTriggers.add("⚡ Multi-Seismic Alignment");}
-        }
-        else if (probability < 20.0) { // suspicious silence
-        	probability = 30.01; result.activeTriggers.add("⚡ Suspicious silence (30%)");
-        }
-        	
-        result.probabilityPercent = Math.min(probability, 99.9);
-        result.probabilityPercent = Math.round(result.probabilityPercent * 100.0) / 100.0;
+        probability = Math.min(probability, 92.76);
+        result.probabilityPercent = Math.round(probability * 100.0) / 100.0;
         return result;
     }
-    
     
    //**************************---- DATA ML ----***************************************
    //==================================================================================
     
     public double[] extractFeatures(List<Map<String, Object>> allData, int baseIndex) {
-    	// baseIndex - это текущий день (выбранная дата) и мы его не включаем в выборку.
         int daysWindow7d = 7;
         int daysWindow3d = 3;
         List<Map<String, Object>> windowData7d = allData.subList(Math.max(0, baseIndex - daysWindow7d + 1), baseIndex + 1);
@@ -285,7 +309,7 @@ public class PredictionCalculator {
         double etasSwarmRatio = lambdaToday / mu;
         
         // ==========================================
-        // 4. КИНЕМАТИКА (Pearson 7d vs 3d)
+        // 4. КИНЕМАТИКА (Pearson)
         // ==========================================
         double[] windowMagnitudes3d = mathService.extractDoubleArray(windowData3d, "sum_magnitude");
         double[] windowDepths3d = mathService.extractDoubleArray(windowData3d, "avg_depth");
@@ -297,15 +321,13 @@ public class PredictionCalculator {
             int endIdx = baseIndex - trendDays + i;
             int startIdx = Math.max(0, endIdx - daysWindow3d);
             
-            // Если индекс уходит в минус на самом старте истории базы, страхуемся
+            // Если индекс уходит в минус на самом старте истории базы
             if (startIdx < 0) startIdx = 0;
             
             List<Map<String, Object>> subWindow = allData.subList(startIdx, endIdx);
             double[] subMags = mathService.extractDoubleArray(subWindow, "sum_magnitude");
             double[] subDeps = mathService.extractDoubleArray(subWindow, "avg_depth");
-            
             double p = mathService.getPearsonCorrelation(subMags, subDeps);
-            // Если дисперсия нулевая, Pearson может вернуть NaN. Заменяем на 0.
             pearsonHistory[i] = Double.isNaN(p) ? 0.0 : p; 
         }
         // Вычисляем истинный наклон тренда через линейную регрессию
@@ -345,12 +367,10 @@ public class PredictionCalculator {
         double benioffAccel = velocityToday - velocityYesterday;
         
         // USGS water temperature;
-    	Object meanObj = allData.get(baseIndex).get("median_temp");
-    	double currentMeanTemp = (meanObj != null) ? ((Number) meanObj).doubleValue() : 0.0;
-    	double[] windowMeanTemp = mathService.extractDoubleArray(windowData7d, "median_temp");
-    	double deltaTemp = windowMeanTemp[windowMeanTemp.length-1] - windowMeanTemp[windowMeanTemp.length-2];
-        double[] velocityTemp = mathService.calculateDerivative(windowMeanTemp);
-        double waterTrend = mathService.calculateTrendSlope(windowMeanTemp);
+    	double[] windowTemp = mathService.extractDoubleArray(windowData7d, "median_temp");
+    	double deltaTemp = windowTemp[windowTemp.length-1] - windowTemp[windowTemp.length-2];
+        double[] velocityTemp = mathService.calculateDerivative(windowTemp);
+        double waterTrend = mathService.calculateTrendSlope(windowTemp);
       
         velocityToday = velocityTemp[velocityTemp.length - 1] - velocityTemp[velocityTemp.length - 2];
         velocityYesterday = velocityTemp[velocityTemp.length - 2] - velocityTemp[velocityTemp.length - 3];
@@ -368,8 +388,8 @@ public class PredictionCalculator {
             depthDelta, 		  // [4] Дельта глубины (модуль рывка)
             depthAccel,           // [5] Ускорение сдвига глубины
             currentBValue,        // [6] Напряжение (самодостаточный)
-            pearson3d,            // [7] Базовый Пирсон (7 дней)
-            pearsonTrend,         // [8] Динамика Пирсона (3д относительно 7д)
+            pearson3d,            // [7] Базовый Пирсон
+            pearsonTrend,         // [8] Динамика Пирсона
             moonSpeedExtremum,    // [9] Гравитационный триггер
             deltaTemp,			  // [10] Динамика температуры Firehole River 
             tempAccel,			  // [11] Скорость изминения температуры Firehole River 
