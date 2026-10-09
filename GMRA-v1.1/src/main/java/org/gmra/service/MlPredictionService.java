@@ -54,7 +54,6 @@ public class MlPredictionService {
     public void trainAllModels() throws Exception {
         List<Map<String, Object>> allData = systemDao.getAllHistoricalDataJoined();
         tools.writeLog("⏳ Start model training (3 Days, 2 Days, 24h)...");
-        // Штраф FN = 30.0 зафиксирован для всех горизонтов согласно тестам
         trainedModel72h = trainModelForWindow(allData, 1, 3, 6.0, 30.0);
         trainedModel48h = trainModelForWindow(allData, 1, 2, 6.0, 40.0);
         trainedModel24h = trainModelForWindow(allData, 1, 1, 6.0, 50.0);
@@ -121,15 +120,15 @@ public class MlPredictionService {
     // ========================================
 
     public MlForecast getPredictionFor72h(List<Map<String, Object>> allData, int baseIndex) throws Exception {
-        return processPrediction(allData, trainedModel72h, 87.0, "3 Days", baseIndex);
+        return processPrediction(allData, trainedModel72h, 92.0, "3 Days", baseIndex);
     }
 
     public MlForecast getPredictionFor48h(List<Map<String, Object>> allData, int baseIndex) throws Exception {
-        return processPrediction(allData, trainedModel48h, 87.0, "2 Days", baseIndex);
+        return processPrediction(allData, trainedModel48h, 92.0, "2 Days", baseIndex);
     }
 
     public MlForecast getPredictionFor24h(List<Map<String, Object>> allData, int baseIndex) throws Exception {
-        return processPrediction(allData, trainedModel24h, 73.0, "1 Day", baseIndex);
+        return processPrediction(allData, trainedModel24h, 92.0, "1 Day", baseIndex);
     }
     
     private MlForecast processPrediction(List<Map<String, Object>> allData, CostSensitiveClassifier model, double threshold, String horizonName, int baseIndex) throws Exception {
