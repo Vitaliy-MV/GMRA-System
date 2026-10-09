@@ -1,6 +1,7 @@
 package org.gmra.controller;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,6 +51,214 @@ public class AdminController {
         
     }
     */
+    
+    /*
+    // Test FP, TP, with Trigger Analysis
+    @GetMapping("/api/admin/optimize/testTriggers")
+    @ResponseBody
+    public ResponseEntity<String> testTriggers() {
+        try {
+            List<Map<String, Object>> allData = systemDao.getAllHistoricalDataJoined();
+            int tp = 0, fp = 0, fn = 0, tn = 0;
+            
+            // Корзины для анализа FP (где прячутся ложные тревоги)
+            int fp_90_100 = 0, tp_90_100 = 0;
+            int fp_85_89  = 0, tp_85_89 = 0;
+            int fp_80_84  = 0, tp_80_84 = 0;
+            int fp_75_79  = 0, tp_75_79 = 0;
+
+            // Карта для подсчета частоты триггеров в событиях FP
+            Map<String, Integer> fpTriggerCounts = new HashMap<>();
+
+            System.out.println("🚀 Старт бэктеста (API Simulation) [Анализ триггеров FP]...");
+            long startTime = System.currentTimeMillis();
+
+            for (int i = 14; i < allData.size() - 1; i++) {
+                LocalDate baseDate = ((java.sql.Date) allData.get(i).get("stat_date")).toLocalDate();
+                Map<String, PredictionResult> forecasts = forecastOrchestratorService.generateFullForecast(baseDate, allData);
+                
+                PredictionResult todayForecast = forecasts.get("today");
+                if (todayForecast == null) continue;
+
+                double prob = todayForecast.probabilityPercent;
+                boolean isFinalAlarm = prob >= 75.0; 
+
+                Object mObj = allData.get(i + 1).get("max_magnitude");
+                double actualMag = (mObj != null) ? ((Number) mObj).doubleValue() : 0.0;
+                boolean isEq = actualMag >= 6.0;
+
+                if (isFinalAlarm && isEq) {
+                    tp++;
+                    if (prob >= 90.0) tp_90_100++;
+                    else if (prob >= 85.0) tp_85_89++;
+                    else if (prob >= 80.0) tp_80_84++;
+                    else tp_75_79++;
+                }
+                else if (isFinalAlarm && !isEq) {
+                    fp++; // Ложная тревога. 
+                    if (prob >= 90.0) fp_90_100++;
+                    else if (prob >= 85.0) fp_85_89++;
+                    else if (prob >= 80.0) fp_80_84++;
+                    else fp_75_79++;
+
+                    // СБОР ТРИГГЕРОВ: Записываем, кто виноват в ложной тревоге
+                    if (todayForecast.activeTriggers != null) {
+                        for (String trigger : todayForecast.activeTriggers) {
+                            fpTriggerCounts.put(trigger, fpTriggerCounts.getOrDefault(trigger, 0) + 1);
+                        }
+                    }
+                }
+                else if (!isFinalAlarm && isEq) {
+                    fn++; 
+                }
+                else if (!isFinalAlarm && !isEq) {
+                    tn++;
+                }
+            }
+
+            long endTime = System.currentTimeMillis();
+            long durationSec = (endTime - startTime) / 1000;
+
+            double precision = (tp + fp == 0) ? 0 : (double) tp / (tp + fp) * 100.0;
+            double recall = (tp + fn == 0) ? 0 : (double) tp / (tp + fn) * 100.0;
+            double f05 = (precision + recall == 0) ? 0 : (1.25 * precision * recall) / ((0.25 * precision) + recall);
+
+            // Сортируем триггеры по частоте спама
+            StringBuilder triggerReport = new StringBuilder();
+            fpTriggerCounts.entrySet().stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(20) // Показываем Топ-20 самых частых триггеров
+                .forEach(e -> triggerReport.append(String.format("  - %s: %d раз\n", e.getKey(), e.getValue())));
+
+            String report = String.format(
+                "=== 🏆 НАГРУЗОЧНЫЙ ТЕСТ ОРКЕСТРАТОРА (Анализ FP) ===\n" +
+                "TP: %d | FP: %d | FN: %d | TN: %d\n" +
+                "Precision: %.2f%% | Recall: %.2f%% | F0.5: %.2f%%\n" +
+                "Время выполнения: %d сек.\n" +
+                "----------------------------------------------------\n" +
+                "ГДЕ ПРЯЧУТСЯ ЛОЖНЫЕ ТРЕВОГИ (FP = %d):\n" +
+                "Диапазон [90%% - 100%%] (Экстремальная уверенность): %d событий\n" +
+                "Диапазон [85%% - 89%%] (Высокая уверенность): %d событий\n" +
+                "Диапазон [80%% - 84%%] (Средняя уверенность): %d событий\n" +
+                "Диапазон [75%% - 79%%] (На грани порога): %d событий\n" +
+                "----------------------------------------------------\n" +
+                "Реальные ТРЕВОГИ (TP = %d):\n" +
+                "Диапазон [90%% - 100%%] (Экстремальная уверенность): %d событий\n" +
+                "Диапазон [85%% - 89%%] (Высокая уверенность): %d событий\n" +
+                "Диапазон [80%% - 84%%] (Средняя уверенность): %d событий\n" +
+                "Диапазон [75%% - 79%%] (На грани порога): %d событий\n" +
+                "----------------------------------------------------\n" +
+                "🔥 ТОП ТРИГГЕРОВ, ГЕНЕРИРУЮЩИХ FP:\n%s\n" +
+                "==========================================================",
+                tp, fp, fn, tn, precision, recall, f05, durationSec,
+                fp, fp_90_100, fp_85_89, fp_80_84, fp_75_79,
+                tp, tp_90_100, tp_85_89, tp_80_84, tp_75_79,
+                triggerReport.toString()
+            );
+
+            System.out.println(report);
+            return ResponseEntity.ok("<pre>" + report + "</pre>");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Ошибка: " + e.getMessage());
+        }
+    }
+    */
+    
+    /*
+    // Test FP, TP
+    @GetMapping("/api/admin/optimize/testFP")
+    @ResponseBody
+    public ResponseEntity<String> testOrchestratorFP() {
+        try {
+            List<Map<String, Object>> allData = systemDao.getAllHistoricalDataJoined();
+            int tp = 0, fp = 0, fn = 0, tn = 0;
+            
+            // Корзины для анализа FP (где прячутся ложные тревоги)
+            int fp_90_100 = 0, tp_90_100 = 0;
+            int fp_85_89  = 0, tp_85_89 = 0;
+            int fp_80_84  = 0, tp_80_84 = 0;
+            int fp_75_79  = 0, tp_75_79 = 0;
+
+            System.out.println("🚀 Старт бэктеста (API Simulation) [Анализ диапазона FP]...");
+            long startTime = System.currentTimeMillis();
+
+            for (int i = 14; i < allData.size() - 1; i++) {
+                LocalDate baseDate = ((java.sql.Date) allData.get(i).get("stat_date")).toLocalDate();
+                Map<String, PredictionResult> forecasts = forecastOrchestratorService.generateFullForecast(baseDate, allData);
+                
+                PredictionResult todayForecast = forecasts.get("today");
+                if (todayForecast == null) continue;
+
+                double prob = todayForecast.probabilityPercent;
+                boolean isFinalAlarm = prob >= 75.0; 
+
+                Object mObj = allData.get(i + 1).get("max_magnitude");
+                double actualMag = (mObj != null) ? ((Number) mObj).doubleValue() : 0.0;
+                boolean isEq = actualMag >= 6.0;
+
+                if (isFinalAlarm && isEq) {
+                    tp++;
+                    if (prob >= 90.0) tp_90_100++;
+                    else if (prob >= 85.0) tp_85_89++;
+                    else if (prob >= 80.0) tp_80_84++;
+                    else tp_75_79++;
+                }
+                else if (isFinalAlarm && !isEq) {
+                    fp++; // Ложная тревога. Проверяем, насколько система была уверена:
+                    if (prob >= 90.0) fp_90_100++;
+                    else if (prob >= 85.0) fp_85_89++;
+                    else if (prob >= 80.0) fp_80_84++;
+                    else fp_75_79++;
+                }
+                else if (!isFinalAlarm && isEq) {
+                    fn++; 
+                }
+                else if (!isFinalAlarm && !isEq) {
+                    tn++;
+                }
+            }
+
+            long endTime = System.currentTimeMillis();
+            long durationSec = (endTime - startTime) / 1000;
+
+            double precision = (tp + fp == 0) ? 0 : (double) tp / (tp + fp) * 100.0;
+            double recall = (tp + fn == 0) ? 0 : (double) tp / (tp + fn) * 100.0;
+            double f05 = (precision + recall == 0) ? 0 : (1.25 * precision * recall) / ((0.25 * precision) + recall);
+
+            String report = String.format(
+                "=== 🏆 НАГРУЗОЧНЫЙ ТЕСТ ОРКЕСТРАТОРА (Анализ FP) ===\n" +
+                "TP: %d | FP: %d | FN: %d | TN: %d\n" +
+                "Precision: %.2f%% | Recall: %.2f%% | F0.5: %.2f%%\n" +
+                "Время выполнения: %d сек.\n" +
+                "----------------------------------------------------\n" +
+                "ГДЕ ПРЯЧУТСЯ ЛОЖНЫЕ ТРЕВОГИ (FP = %d):\n" +
+                "Диапазон [90%% - 100%%] (Экстремальная уверенность): %d событий\n" +
+                "Диапазон [85%% - 89%%] (Высокая уверенность): %d событий\n" +
+                "Диапазон [80%% - 84%%] (Средняя уверенность): %d событий\n" +
+                "Диапазон [75%% - 79%%] (На грани порога): %d событий\n" +
+                "----------------------------------------------------\n" +
+                "Реальные ТРЕВОГИ (TP = %d):\n" +
+                "Диапазон [90%% - 100%%] (Экстремальная уверенность): %d событий\n" +
+                "Диапазон [85%% - 89%%] (Высокая уверенность): %d событий\n" +
+                "Диапазон [80%% - 84%%] (Средняя уверенность): %d событий\n" +
+                "Диапазон [75%% - 79%%] (На грани порога): %d событий\n" +
+                "==========================================================",
+                tp, fp, fn, tn, precision, recall, f05, durationSec,
+                fp, fp_90_100, fp_85_89, fp_80_84, fp_75_79,
+                tp, tp_90_100, tp_85_89, tp_80_84, tp_75_79
+            );
+
+            System.out.println(report);
+            return ResponseEntity.ok("<pre>" + report + "</pre>");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Ошибка: " + e.getMessage());
+        }
+    }
+    */    
     
     /*
     // Test FP, FN, TP, TN
@@ -157,7 +366,7 @@ public class AdminController {
                 // Фактический результат на следующий шаг для проверки прогноза "На сегодня"[cite: 7]
                 Object mObj = allData.get(i + 1).get("max_magnitude");
                 double actualMag = (mObj != null) ? ((Number) mObj).doubleValue() : 0.0;
-                boolean isEq = actualMag >= 6.0;
+                boolean isEq = actualMag >= 6.5;
 
                 // Подсчет метрик[cite: 7]
                 if (isFinalAlarm && isEq) tp++;
@@ -195,6 +404,7 @@ public class AdminController {
         }
     }
 	*/
+    
 
     /*
     // TEST for 3ML
