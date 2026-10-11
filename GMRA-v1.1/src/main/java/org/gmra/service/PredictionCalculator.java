@@ -210,26 +210,30 @@ public class PredictionCalculator {
                 // Anomaly coefficient (lambda / 819.35)
                 double swarmRatio = lambdaToday / mu;
                 double lambdaDelta = lambdaToday - lambdaYesterday;
-         
-                // If the planetary background > 10%
-                if (swarmRatio > 1.10) { 
-                    hasEtas = true;
-                    if (lambdaDelta > 0) {
-                        if (swarmRatio > 1.60) { // Burst > 1300 events (Equivalent to a M7.0+ burst)
-                            currentScore += mathService.cachedWeights.weightEventSwarm;
-                            result.activeTriggers.add("ETAS Swarm: Extreme Acceleration (Ogata/Omori-Utsu)");
-                        } else if (swarmRatio > 1.30) { // Burst > 1050 events
-                            currentScore += mathService.cachedWeights.weightEventSwarm * 0.83;
-                            result.activeTriggers.add("ETAS Swarm: High Acceleration (Ogata/Omori-Utsu)");
-                        } else { // Burst > 900 events
-                            currentScore += mathService.cachedWeights.weightEventSwarm * 0.53;
-                            result.activeTriggers.add("ETAS Swarm: Moderate Accel. (Ogata/Omori-Utsu)");
-                        }
+                
+                if (swarmRatio > 1.10 && lambdaDelta < 0.0) {
+                	hasEtas = true;
+                	if (swarmRatio > 1.40) {
+                		currentScore += mathService.cachedWeights.weightEventSwarm * 0.75;
+                		result.activeTriggers.add("ETAS Swarm: Extreme Acceleration (Ogata/Omori-Utsu)");
+                	} else if (swarmRatio > 1.30) {
+                		currentScore += mathService.cachedWeights.weightEventSwarm * 0.65;
+                		result.activeTriggers.add("ETAS Swarm: High Acceleration (Ogata/Omori-Utsu)");
+                	} else {
+                		currentScore += mathService.cachedWeights.weightEventSwarm * 0.55;
+                		result.activeTriggers.add("ETAS Swarm: Moderate Accel. (Ogata/Omori-Utsu)");
+                		}
+                } 
+                else {
+                	if (swarmRatio > 1.10 && lambdaDelta > 0.0 && lambdaDelta < 35.0) {
+                		currentScore += mathService.cachedWeights.weightEventSwarm;
+                		result.activeTriggers.add("ETAS Swarm: U-turn/Lock-in (Ogata/Omori-Utsu)⇅");
+                		hasEtas = true;
                     } 
-                    else {
-                        // The swarm is fading away amid still high tension
-                        currentScore += mathService.cachedWeights.weightEventSwarm;
-                        result.activeTriggers.add("ETAS Swarm: U-turn / Lock-in (Ogata/Omori-Utsu)⇅");
+                    else if (swarmRatio > 1.4 && lambdaDelta > 35.0) {
+                    	currentScore += mathService.cachedWeights.weightEventSwarm * 0.55;
+                        result.activeTriggers.add("ETAS Swarm: Aftershocks ⚡");
+                        hasEtas = true;
                     }
                 }
             }
