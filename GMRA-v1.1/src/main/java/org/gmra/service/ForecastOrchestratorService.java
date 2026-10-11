@@ -51,7 +51,7 @@ public class ForecastOrchestratorService {
             MlPredictionService.MlForecast ml48h = mlService.getPredictionFor48h(allData, yesterdayIndex);
             MlPredictionService.MlForecast ml24h = mlService.getPredictionFor24h(allData, yesterdayIndex);
             
-           int mlAlarmsToday = (ml24h.isAlarm ? 1 : 0) + (ml48h.isAlarm ? 1 : 0) + (ml72h.isAlarm ? 1 : 0);
+            int mlAlarmsToday = (ml24h.isAlarm ? 1 : 0) + (ml48h.isAlarm ? 1 : 0) + (ml72h.isAlarm ? 1 : 0);
             boolean control48Сheck72 = (ml48h.isAlarm && ml72h.isAlarm) ? true : false;
             
             // ========================================
@@ -98,7 +98,7 @@ public class ForecastOrchestratorService {
                 // ===============================
                 // 🛑 2. PESSIMIZATION (0 or 1 ML)
                 // ===============================
-                else if (mlAlarmsToday == 0 || mlAlarmsToday == 1) {
+                else if (mlAlarmsToday == 0) {
                     // If the AI ​​is silent or doubtful
                     if (currPerToday >= 75.0) {
                         percent = currPerToday;
@@ -106,7 +106,7 @@ public class ForecastOrchestratorService {
                         percent = currPerToday - diff - 0.1;
                         percent = Math.round(percent * 100.0) / 100.0;
                         today.probabilityPercent = percent;
-                        today.activeTriggers.add("2ML 🤖 Not confirmed (-" + ((int)diff + 0.1) + "%)");
+                        today.activeTriggers.add("3ML 🤖 Not confirmed (-" + ((int)diff + 0.1) + "%)");
                         triggersAdd = true;
                     }
                 }
@@ -204,6 +204,12 @@ public class ForecastOrchestratorService {
                  		today.activeTriggers.addAll(ml72h.triggers);
                  	}
                 }
+                // ======================
+                // ⚡ DYNAMIC PROBABILITY 
+                // ======================
+                if (today.probabilityPercent < 75.0) {
+                	applyDynamicFallback(today, ml24h, ml48h, ml72h, mlAlarmsToday, currPerToday);
+                }
                 // ====================================
                 // 🛡️ SECOND LEVEL OF VERIFICATION (FP)
                 // ====================================
@@ -230,7 +236,7 @@ public class ForecastOrchestratorService {
                         percent = currPerToday - diff - 0.1;
                         percent = Math.round(percent * 100.0) / 100.0;
                         today.probabilityPercent = percent;
-                        today.activeTriggers.add("🛡️ Chief Controller (" + ((int)diff + 0.1) + "%)");
+                        today.activeTriggers.add("🛡️ Chief Controller (-" + ((int)diff + 0.1) + "%)");
                     }
                 }
                 // ==========
@@ -269,16 +275,11 @@ public class ForecastOrchestratorService {
                 		double diff = 75 - percent;
                 		percent = currPerToday + (diff + 5.0);
                 		percent = Math.round(percent * 100.0) / 100.0;
+                		percent = Math.min(percent, 99.9);
                 		today.probabilityPercent = percent;
                 		today.activeTriggers.add("🛡️ Chief Controller (+" + ((int)diff + 5.0) + "%)");
                 		triggersAdd = true;
-                  }
-                }
-                // ============================================================
-                // ⚡ DYNAMIC PROBABILITY (Recall: 97.27%; Precision: ~61.00%)
-                // ============================================================
-                if (today.probabilityPercent < 75.0) {
-                	applyDynamicFallback(today, ml24h, ml48h, ml72h, mlAlarmsToday, currPerToday);
+                    }
                 }
             }
             //===================
@@ -360,15 +361,15 @@ public class ForecastOrchestratorService {
             double dynamicProbability = mathShare + mlShare;
             boolean tempAccel = getTempRiver(today.activeTriggers) >= 0.5;
         
-          /*  // Additional check: moving to the red zone
+            // Additional check: moving to the red zone
             if (dynamicProbability >= 75.0 && mlAlarmsToday == 3 && avgMlProb >= 99.0 && tempAccel) {
-                today.probabilityPercent = Math.round(dynamicProbability * 100.0) / 100.0;
-                today.activeTriggers.add("⚡ Dynamic Fallback Rescue (Promoted to Red Zone)");
+                today.activeTriggers.add("⚡ Dynamic Probability ⚡");
             }
             else {
-           */ 	 dynamicProbability = Math.min(dynamicProbability, 74.9);
-            	 today.probabilityPercent = Math.round(dynamicProbability * 100.0) / 100.0;
-            //}
+           	 	dynamicProbability = Math.min(dynamicProbability, 74.9);
+            }
+            dynamicProbability = Math.min(dynamicProbability, 99.9);
+            today.probabilityPercent = Math.round(dynamicProbability * 100.0) / 100.0;
         } 
         catch (Exception e) {}
     }
