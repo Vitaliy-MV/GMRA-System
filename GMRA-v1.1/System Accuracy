@@ -1,4 +1,10 @@
 📊 Final System Accuracy (Red Zone)
-M5.5+ (24h): F0.5: 70.44% | Precision: 83.67% | Recall: 43.15%
-M6.0+ (24h): F0.5: 68.53% | Precision: 64.53% | Recall: 91.12%
-M6.5+ (24h): F0.5: 19.53% | Precision: 16.33% | Recall: 91.08%
+M5.5+ (24h): F0.5: 71.28% | Precision: 82.57% | Recall: 46.08%
+M6.0+ (24h): F0.5: 66.25% | Precision: 61.67% | Recall: 94.24%
+M6.5+ (24h): F0.5: 18.90% | Precision: 15.75% | Recall: 95.08%
+
+TEST M6.0+
+Indexes processed: 5844
+TP: 1210 | FP: 752 | FN: 74 | TN: 3793
+Precision: 61,67% | Recall: 94,24% | F0.5: 66,25%
+==================================================
