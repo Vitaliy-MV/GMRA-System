@@ -5,9 +5,12 @@ import org.gmra.dto.PredictionResult;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ForecastOrchestratorService {
@@ -96,7 +99,7 @@ public class ForecastOrchestratorService {
                     }
                 }
                 // ===============================
-                // 🛑 2. PESSIMIZATION (0 or 1 ML)
+                // 🛑 2. PESSIMIZATION (0)
                 // ===============================
                 else if (mlAlarmsToday == 0) {
                     // If the AI ​​is silent or doubtful
@@ -114,19 +117,6 @@ public class ForecastOrchestratorService {
                 // ⚖️ 3. STRICT CASCADE (2 ML)
                 // ===========================
                 else if (mlAlarmsToday == 2) {
-                    if (!control48Сheck72) {
-                        if (currPerToday >= 75.0) {
-                        	percent = currPerToday;
-                            double diff = percent - 75;
-                            percent = currPerToday - diff - 0.1;
-                            percent = Math.round(percent * 100.0) / 100.0;
-                            today.probabilityPercent = percent;
-                            today.activeTriggers.add("ML 🤖 Weak Cascade  (-" + ((int)diff + 0.1) + "%)");
-                            triggersAdd = true;
-                        }
-                    }
-                    else {
-                        // control48Сheck72 == true (high precision)
                         if (currPerToday >= 49.0 && currPerToday < 75.0) {
                         	percent = currPerToday;
                             double diff = 75 - percent;
@@ -137,60 +127,32 @@ public class ForecastOrchestratorService {
                             today.activeTriggers.add("⚠️ 2ML CASCADE (+" + ((int)diff + 5.0) + "%)");
                             triggersAdd = true;
                         } 
-                        else if (currPerToday >= 75.0 && ml72h.probability >= 96.0 && ml48h.probability >= 96.0) {
+                        else if (currPerToday >= 75.0 && control48Сheck72) {
                             today.probabilityPercent = Math.min(99.0, Math.round((currPerToday + 3.0) * 100.0) / 100.0);
                             today.activeTriggers.addAll(ml48h.triggers);
                             today.activeTriggers.add("🚨 2ML Confirmed! (+3%)");
                             triggersAdd = true;
                         }
-                        else if (currPerToday >= 75.0 && (ml72h.probability < 96.0 || ml48h.probability < 96.0)) {
-                        	percent = currPerToday;
-                            double diff = percent - 75;
-                            percent = currPerToday - diff - 0.1;
-                            percent = Math.round(percent * 100.0) / 100.0;
-                            today.probabilityPercent = percent;
-                            today.activeTriggers.add("⚠️ 2ML CASCADE (-" + ((int)diff + 0.1) + "%)");
-                            triggersAdd = true;
-                        }
-                    }
-                }
-             // ============================
+                	}
+                // ============================
                 // 🚀 4. PERFECT STORM (3 ML)
                 // ==========================
                 else if (mlAlarmsToday == 3) {
-                    if (currPerToday >= 49.0 && currPerToday < 75.0) {
-                    	if (ml72h.probability < 99.0 || ml48h.probability < 99.0) {
-                    		percent = currPerToday;
-                            double diff = 75 - percent;
-                            percent = currPerToday + (diff - 0.1);
-                            percent = Math.round(percent * 100.0) / 100.0;
-                            today.probabilityPercent = percent;
-                            today.activeTriggers.addAll(ml24h.triggers);
-                            today.activeTriggers.add("⚠️ 3ML CASCADE (+" + ((int)diff - 0.1) + "%)");
-                            triggersAdd = true;
-                    	}
-                    	else {
-                    		percent = currPerToday;
-                    		double diff = 75 - percent;
-                    		percent = currPerToday + (diff + 5.0);
-                    		percent = Math.round(percent * 100.0) / 100.0;
-                    		today.probabilityPercent = percent;
-                    		today.activeTriggers.addAll(ml24h.triggers);
-                    		today.activeTriggers.add("⚠️ 3ML CASCADE (+" + ((int)diff + 5.0) + "%)");
-                    		triggersAdd = true;
-                    	}
-                    } 
-                    else if (currPerToday >= 75.0 && ml72h.probability >= 99.0 && ml48h.probability >= 99.0 && ml24h.probability >= 99.0) {
+                    if (currPerToday < 75.0) {
+                    	percent = currPerToday;
+                        double diff = 75 - percent;
+                        percent = currPerToday + (diff + 0.1);
+                        percent = Math.round(percent * 100.0) / 100.0;
+                        today.probabilityPercent = percent;
+                        today.activeTriggers.addAll(ml24h.triggers);
+                        today.activeTriggers.add("⚠️ 3ML CASCADE (+" + ((int)diff + 0.1) + "%)");
+                        triggersAdd = true;
+                    }
+                    else if (currPerToday >= 75.0) {
                         today.probabilityPercent = Math.min(99.0, Math.round((currPerToday + 3.0) * 100.0) / 100.0);
                         today.activeTriggers.addAll(ml24h.triggers);
                         today.activeTriggers.add("🚨 3ML Confirmed! (+3%)");
                         triggersAdd = true;
-                    }
-                    else if (currPerToday >= 75.0 && (ml72h.probability < 99.0 || ml48h.probability < 99.0 || ml24h.probability < 99.0)) {
-                        percent = currPerToday;
-                        double diff = percent - 75;
-                        percent = currPerToday - diff - 0.1;
-                        today.probabilityPercent = Math.round(percent * 100.0) / 100.0;
                     }
                 }
                 if (!triggersAdd && mlAlarmsToday > 0) {
@@ -215,20 +177,8 @@ public class ForecastOrchestratorService {
                 // ====================================
                 if (today.probabilityPercent >= 75.0) {
                     boolean revertToOrange = false;
-
-                    // Rule 1: Pulling out weak indicators (< 65%)
-                    if (currPerToday < 65.0) {
-                        if (ml72h.probability < 96.0 || ml48h.probability < 96.0) revertToOrange = true;
-                    }
-                    // Rule 3: Pulling the average (65% - 75%)
-                    else if (currPerToday >= 65.0 && currPerToday < 75.0) {
-                        if (ml72h.probability < 93.0 || ml48h.probability < 93.0) revertToOrange = true;
-                    }
-                    // Rule 3: Extreme Confidence Test 
-                    else if (currPerToday >= 75.0) {
-                        if (ml72h.probability < 93.0 || ml48h.probability < 93.0) {
-                            revertToOrange = true;
-                        }
+                    if (ml72h.probability < 96.0 || ml48h.probability < 96.0) {
+                    	revertToOrange = true;
                     }
                     if (revertToOrange) {
                     	percent = currPerToday;
@@ -237,48 +187,6 @@ public class ForecastOrchestratorService {
                         percent = Math.round(percent * 100.0) / 100.0;
                         today.probabilityPercent = percent;
                         today.activeTriggers.add("🛡️ Chief Controller (-" + ((int)diff + 0.1) + "%)");
-                    }
-                }
-                // ==========
-                // Forced FN  
-                // ==========
-                else if (today.probabilityPercent >= 65.0 && today.probabilityPercent < 75.0) {
-                	boolean strongMlSupport = ml72h.probability >= 99.0 && (ml48h.probability >= 96.0 || ml24h.probability >= 96.0);
-                	boolean postDischarge = today.activeTriggers != null ? today.activeTriggers.stream().anyMatch(t -> t.contains("Post-Seismic Discharge")) : true;
-                	boolean promoteToRed = false;
-                	
-                    if (today.activeTriggers != null && !postDischarge) {
-                    	boolean hasMoon		  = today.activeTriggers.stream().anyMatch(t -> t.contains("Moon"));
-                    	boolean hasApsid      = today.activeTriggers.stream().anyMatch(t -> t.contains("Aphelion"));
-                    	boolean hasTectonic	  = today.activeTriggers.stream().anyMatch(t -> t.contains("Tectonic Fluctuations"));
-                    	boolean hasEtas 	  = today.activeTriggers.stream().anyMatch(t -> t.contains("ETAS Swarm: Aftershocks ⚡"));
-                        boolean hasDepth   	  = today.activeTriggers.stream().anyMatch(t -> t.contains("Depth Anomaly"));                    
-                        boolean hasBValue	  = today.activeTriggers.stream().anyMatch(t -> t.contains("b-value"));
-                        
-                    // SEISMIC
-                    if (hasBValue && hasEtas && strongMlSupport) {
-                        promoteToRed = true;
-                    }
-                    else if (hasBValue && hasDepth && hasTectonic && strongMlSupport) {
-                        promoteToRed = true;
-                    }
-                    else if (hasEtas && strongMlSupport) {
-                        promoteToRed = true;
-                    }
-                    // ASTRONOMY + SEISMIC
-                    else if (hasBValue && hasMoon && hasApsid && strongMlSupport) {
-                        promoteToRed = true;
-                    	}
-                    }
-                    if (promoteToRed) {
-                        percent = today.probabilityPercent;
-                		double diff = 75 - percent;
-                		percent = currPerToday + (diff + 5.0);
-                		percent = Math.round(percent * 100.0) / 100.0;
-                		percent = Math.min(percent, 99.9);
-                		today.probabilityPercent = percent;
-                		today.activeTriggers.add("🛡️ Chief Controller (+" + ((int)diff + 5.0) + "%)");
-                		triggersAdd = true;
                     }
                 }
             }
@@ -346,8 +254,8 @@ public class ForecastOrchestratorService {
             double mathShare = 50.0 * ((clampedMath - 0.0) / (91.12 - 0.0));
 
             // 2. Normalization contribution of ML (0 - 50 points, range 92% - 99%)
-            double clampedMl = Math.max(92.0, Math.min(99.0, avgMlProb));
-            double mlFactor = 0.5 + 0.5 * ((clampedMl - 92.0) / (99.0 - 92.0));
+            double clampedMl = Math.max(92.0, Math.min(100.0, avgMlProb));
+            double mlFactor = 0.5 + 0.5 * ((clampedMl - 92.0) / (100.0 - 92.0));
             
             double mlShare = 0.0;
             if (mlAlarmsToday == 3) {
@@ -362,7 +270,7 @@ public class ForecastOrchestratorService {
             boolean tempAccel = getTempRiver(today.activeTriggers) >= 0.5;
         
             // Additional check: moving to the red zone
-            if (dynamicProbability >= 75.0 && mlAlarmsToday == 3 && avgMlProb >= 99.0 && tempAccel) {
+            if (dynamicProbability >= 75.0 && mlAlarmsToday == 3 && avgMlProb >= 98.0 && tempAccel) {
                 today.activeTriggers.add("⚡ Dynamic Probability ⚡");
             }
             else {
