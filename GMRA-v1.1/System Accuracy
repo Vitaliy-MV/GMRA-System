@@ -8,3 +8,6 @@ Indexes processed: 5844
 TP: 1258 | FP: 966 | FN: 34 | TN: 3571
 Precision: 56,56% | Recall: 97,37% | F0.5: 61,74%
 ==================================================
+
+Added Training ML autoupdate (Dynamical Accuracy)
+@Scheduled(cron = "0 10 7 * * *", zone = "UTC")
