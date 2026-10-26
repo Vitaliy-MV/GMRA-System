@@ -50,7 +50,7 @@ public class MlPredictionService {
     // =================================
     // ENSEMBLE TRAINING (For Cron Run)
     // =================================
-
+    @Scheduled(cron = "0 10 7 * * *", zone = "UTC")
     public void trainAllModels() throws Exception {
         List<Map<String, Object>> allData = systemDao.getAllHistoricalDataJoined();
         tools.writeLog("⏳ Start model training (3 Days, 2 Days, 24h)...");
