@@ -1,6 +1,7 @@
 ## Roadmap / Next steps
 Steps for integrating algorithms into a real monitoring service:
 - Bug fixes and code cleanup (removing inappropriate comments)
+- Add volcanoes (part of the FP comes from them)
 - Geoclustering
 - Scaling
 - Adding solar cycles
